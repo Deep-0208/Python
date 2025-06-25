@@ -1,0 +1,11 @@
+setNum = set()
+setNum.add(input("Input  Number :"))
+setNum.add(input("Input  Number :"))
+setNum.add(input("Input  Number :"))
+setNum.add(input("Input  Number :"))
+setNum.add(input("Input  Number :"))
+setNum.add(input("Input  Number :"))
+setNum.add(input("Input  Number :"))
+setNum.add(input("Input  Number :"))
+
+print(setNum)
