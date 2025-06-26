@@ -1,1 +1,14 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
+# Ignore Python compiled files
+__pycache__/
+*.pyc
+
+# Ignore environment and virtualenv folders
+env/
+venv/
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore secret config
+.env
