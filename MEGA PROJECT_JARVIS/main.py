@@ -15,7 +15,7 @@ news_api = os.getenv("NEWS_API_KEY")
 
 # === Initialize Groq Client ===
 client = OpenAI(
-    api_key="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", 
+    api_key=groq_api, 
     base_url="https://api.groq.com/openai/v1"
 )
 
@@ -102,6 +102,7 @@ if __name__ == "__main__":
             command = take_command().strip()
             if not command:
                 continue
+            
 
             # === PREDEFINED COMMANDS ===
             if "open youtube" in command:
