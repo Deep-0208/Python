@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 import os
 from openai import OpenAI
 import webbrowser
+import keyboard
+import random
 
 # Load environment variables
 load_dotenv()
@@ -33,13 +35,38 @@ def ask_groq(chat_history):
         return "Sorry, I couldn't get a response from Groq."
 
 # Function to check if last message is NOT from you
-def is_last_message_from_other(chat, your_name="Deep Panchal"):
+
+def should_reply(chat, your_names=["Deep Panchal", "You"]):
+    # 1. Remove extra spaces and split chat by lines
     lines = chat.strip().splitlines()
+
+    # 2. If chat is empty, return False
     if not lines:
         return False
+
+    # 3. Get the last message line
     last_line = lines[-1]
+
+    # 4. Print the last message for debugging
     print("Last Line:", last_line)
-    return your_name + ":" not in last_line  # True if NOT sent by you
+
+    # 5. Check if last message is from any of your names
+    for name in your_names:
+        if name + ":" in last_line:
+            return False  # Message was sent by you
+
+    return True  # Message was sent by someone else
+
+
+#This is complicated to understand
+
+# def is_last_message_from_other(chat, your_name="Deep Panchal"):
+#     lines = chat.strip().splitlines()
+#     if not lines:
+#         return False
+#     last_line = lines[-1]
+#     print("Last Line:", last_line)
+#     return your_name + ":" not in last_line  # True if NOT sent by you
 
 # Open WhatsApp Web
 webbrowser.open("https://web.whatsapp.com")
@@ -81,7 +108,7 @@ while True:
         continue
 
     # 6. Skip if last message was yours
-    if not is_last_message_from_other(chat_history, your_name="Deep Panchal"):
+    if not should_reply(chat_history, your_names=["Deep Panchal" , "You"]):
         print("⛔ Last message is from you. Skipping...")
         last_chat = chat_history
         time.sleep(3)
@@ -97,9 +124,14 @@ while True:
     time.sleep(0.3)
     pyperclip.copy(reply)
     pyautogui.hotkey('ctrl', 'v')
-    time.sleep(0.3)
+    time.sleep(random.uniform(1, 3.0)) 
     pyautogui.press('enter')
 
     # 9. Save state and wait
     last_chat = chat_history + "\n" + reply
     time.sleep(3)
+    
+    # 10. exit from bot
+    if keyboard.is_pressed("esc"):
+        print("🛑 ESC pressed. Exiting loop.")
+        break
