@@ -7,6 +7,8 @@ from openai import OpenAI
 import webbrowser
 import keyboard
 import random
+import tkinter as tk
+from threading import Thread
 
 # Load environment variables
 load_dotenv()
@@ -17,6 +19,18 @@ client = OpenAI(
     api_key=groq_api,
     base_url="https://api.groq.com/openai/v1"
 )
+
+# Global exit flag
+exit_flag = False
+
+# Function to stop the bot when Ctrl + X is pressed
+def stop_bot():
+    global exit_flag
+    print("🛑 Ctrl + X pressed. Stopping bot...")
+    exit_flag = True
+
+# Register the Ctrl + X hotkey
+keyboard.add_hotkey('ctrl+x', stop_bot)
 
 # Function to get response from Groq
 def ask_groq(chat_history):
@@ -35,103 +49,110 @@ def ask_groq(chat_history):
         return "Sorry, I couldn't get a response from Groq."
 
 # Function to check if last message is NOT from you
-
 def should_reply(chat, your_names=["Deep Panchal", "You"]):
-    # 1. Remove extra spaces and split chat by lines
     lines = chat.strip().splitlines()
-
-    # 2. If chat is empty, return False
     if not lines:
         return False
-
-    # 3. Get the last message line
     last_line = lines[-1]
-
-    # 4. Print the last message for debugging
     print("Last Line:", last_line)
-
-    # 5. Check if last message is from any of your names
     for name in your_names:
         if name + ":" in last_line:
-            return False  # Message was sent by you
+            return False
+    return True
 
-    return True  # Message was sent by someone else
+# Function to show GUI popup with 15s + 5s countdown
+def show_full_popup():
+    popup = tk.Tk()
+    popup.title("WhatsApp Bot")
+    popup.geometry("400x180")
+    popup.resizable(False, False)
 
+    label = tk.Label(popup, text="💬 WhatsApp Web is loading...", font=("Arial", 12))
+    label.pack(pady=10)
 
-#This is complicated to understand
+    countdown_label = tk.Label(popup, text="", font=("Arial", 20, "bold"))
+    countdown_label.pack(pady=5)
 
-# def is_last_message_from_other(chat, your_name="Deep Panchal"):
-#     lines = chat.strip().splitlines()
-#     if not lines:
-#         return False
-#     last_line = lines[-1]
-#     print("Last Line:", last_line)
-#     return your_name + ":" not in last_line  # True if NOT sent by you
+    phase_label = tk.Label(popup, text="", font=("Arial", 11))
+    phase_label.pack(pady=5)
 
-# Open WhatsApp Web
+    def full_countdown():
+        # Phase 1: 15s WhatsApp loading
+        seconds = 15
+        while seconds >= 0:
+            countdown_label.config(text=f"⏳ Loading WhatsApp: {seconds}s")
+            phase_label.config(text="Please wait while WhatsApp Web loads...")
+            popup.update()
+            time.sleep(1)
+            seconds -= 1
+
+        # Phase 2: 5s chat selection
+        label.config(text="📌 Please select a chat in WhatsApp!")
+        seconds = 5
+        while seconds >= 0:
+            countdown_label.config(text=f"⏳ Bot starting in: {seconds}s")
+            phase_label.config(text="Make sure a chat is selected.")
+            popup.update()
+            time.sleep(1)
+            seconds -= 1
+
+        popup.destroy()
+
+    Thread(target=full_countdown, daemon=True).start()
+    popup.mainloop()
+
+# Step 1: Open WhatsApp Web and show countdowns
 webbrowser.open("https://web.whatsapp.com")
-print("Waiting 10 seconds for WhatsApp Web to load...")
-time.sleep(10)
+show_full_popup()
 
+# Step 2: Start bot loop
 last_chat = ""
 
-while True:
-
+while not exit_flag:
     pyautogui.click(670, 334)
     time.sleep(0.5)
 
-    # 2. Drag to select chat area (more stable)
     pyautogui.moveTo(687, 215)
     pyautogui.mouseDown(button='left')
     time.sleep(0.1)
     pyautogui.moveTo(1895, 941, duration=1)
     pyautogui.mouseUp(button='left')
     time.sleep(1)
-    
-    # 3. Copy selected chat
+
     pyautogui.hotkey('ctrl', 'c')
     time.sleep(1)
     chat_history = pyperclip.paste().strip()
-    pyautogui.click(1895, 941)  # Unselect
+    pyautogui.click(1895, 941)
 
-    # 4. Check if copy was successful
     if chat_history == "":
         print("⚠️ Nothing copied. Skipping this round.")
         time.sleep(2)
         continue
 
-    # 5. Skip if chat is same as last time
     if chat_history == last_chat:
         print("⏳ No new message. Waiting...")
         pyautogui.click(670, 334)
         time.sleep(3)
         continue
 
-    # 6. Skip if last message was yours
-    if not should_reply(chat_history, your_names=["Deep Panchal" , "You"]):
+    if not should_reply(chat_history, your_names=["Deep Panchal", "You"]):
         print("⛔ Last message is from you. Skipping...")
         last_chat = chat_history
         time.sleep(3)
         continue
 
-    # 7. Generate reply
     print("📩 New chat detected. Asking Groq...")
     reply = ask_groq(chat_history)
     print("✅ Reply:", reply)
 
-    # 8. Send reply
-    pyautogui.click(1370, 970)  # Input box
+    pyautogui.click(1370, 970)
     time.sleep(0.3)
     pyperclip.copy(reply)
     pyautogui.hotkey('ctrl', 'v')
-    time.sleep(random.uniform(1, 3.0)) 
+    time.sleep(random.uniform(1, 3.0))
     pyautogui.press('enter')
 
-    # 9. Save state and wait
     last_chat = chat_history + "\n" + reply
     time.sleep(3)
-    
-    # 10. exit from bot
-    if keyboard.is_pressed("esc"):
-        print("🛑 ESC pressed. Exiting loop.")
-        break
+
+print("Bot exited successfully.")
