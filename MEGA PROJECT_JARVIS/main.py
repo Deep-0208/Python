@@ -8,14 +8,24 @@ import requests
 from openai import OpenAI
 import time
 from dotenv import load_dotenv
+import json
+import random
 
 load_dotenv()  # Load .env file
 groq_api = os.getenv("GROQ_API_KEY")
 news_api = os.getenv("NEWS_API_KEY")
 
+# === Fallback for Missing API Keys ===
+if not groq_api or not news_api:
+    print("Missing API keys. Please check your .env file.")
+    engine = pyttsx3.init()
+    engine.say("Missing API keys. Please check your dot env file.")
+    engine.runAndWait()
+    exit()
+
 # === Initialize Groq Client ===
 client = OpenAI(
-    api_key=groq_api, 
+    api_key=groq_api,
     base_url="https://api.groq.com/openai/v1"
 )
 
@@ -82,7 +92,6 @@ if __name__ == "__main__":
     Speak("Initializing Jarvis...")
 
     # Wake word
-    # === Wake word with timeout ===
     wake_timeout = 60  # seconds
     start_time = time.time()
 
@@ -102,7 +111,6 @@ if __name__ == "__main__":
             command = take_command().strip()
             if not command:
                 continue
-            
 
             # === PREDEFINED COMMANDS ===
             if "open youtube" in command:
@@ -131,6 +139,9 @@ if __name__ == "__main__":
                 Speak("Searching Wikipedia...")
                 try:
                     topic = command.replace("wikipedia", "").strip()
+                    if not topic:
+                        Speak("Please specify a topic to search on Wikipedia.")
+                        continue
                     result = wikipedia.summary(topic, sentences=2)
                     Speak("According to Wikipedia")
                     Speak(result)
@@ -163,16 +174,75 @@ if __name__ == "__main__":
                     Speak("An error occurred while fetching news.")
                     print("News API Error:", e)
 
+            elif "play quiz" in command or "quiz" in command or "game" in command:
+                Speak("Let's Play Quiz...")
+
+                try:
+                    with open("questions.json", "r") as file:
+                        questions = json.load(file)
+                except Exception as e:
+                    Speak("⚠️ Could not load quiz questions.")
+                    print("Quiz Load Error:", e)
+                    continue
+
+                random.shuffle(questions)
+                score = 0
+
+                number_words = {
+                    "one": 1, "two": 2, "three": 3, "four": 4,
+                    "1": 1, "2": 2, "3": 3, "4": 4
+                }
+
+                for i, q in enumerate(questions, start=1):
+                    Speak(f"Q{i}. {q['question']}")
+                    for idx, option in enumerate(q["options"], start=1):
+                        Speak(f"{idx}. {option}")
+
+                    Speak("Please say the option number like 'one', 'option two', or just '3'.")
+
+                    choice = take_command().lower().strip()
+                    num = None
+
+                    if choice in number_words:
+                        num = number_words[choice]
+                    else:
+                        for word in choice.split():
+                            if word in number_words:
+                                num = number_words[word]
+                                break
+
+                    try:
+                        if num and 1 <= num <= 4:
+                            user_answer = q["options"][num - 1]
+                            if user_answer.strip().lower() == q["answer"].strip().lower():
+                                Speak("✅ Correct!")
+                                score += 1
+                            else:
+                                Speak(f"❌ Wrong! Correct answer was: {q['answer']}")
+                        else:
+                            Speak("⚠️ Please choose a number between 1 and 4.")
+                    except:
+                        Speak("⚠️ Couldn't understand your answer. Skipping this question.")
+
+                Speak("🎉 Quiz finished!")
+                Speak(f"🏁 Your total score is: {score} out of {len(questions)}")
+
+            elif "what can you do" in command or "help" in command:
+                Speak("I can open apps and websites, answer questions, search Wikipedia, read news, play a quiz, and chat using Groq AI.")
+
             elif "exit" in command or "quit" in command or "bye" in command:
                 Speak("Goodbye, sir. See you soon.")
                 break
 
-            # === FALLBACK TO GROQ CHAT ===
             else:
                 Speak("Let me think...")
                 answer = ask_groq(command)
                 print("Groq:", answer)
                 Speak(answer)
+
+        except KeyboardInterrupt:
+            Speak("Interrupted. Goodbye.")
+            break
 
         except Exception as main_error:
             print("Error in main loop:", main_error)
