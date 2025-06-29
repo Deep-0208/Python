@@ -242,7 +242,7 @@ if __name__ == "__main__":
             elif "exit" in command or "quit" in command or "bye" in command:
                 Speak("Goodbye, sir. See you soon.")
                 exit()
-
+                
             else:
                 Speak("Let me think...")
                 reply = ask_groq(command)
