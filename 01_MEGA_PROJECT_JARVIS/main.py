@@ -8,12 +8,12 @@ import requests
 from openai import OpenAI
 import time
 from dotenv import load_dotenv
-import json
-import random
 
-load_dotenv()  # Load .env file
+# === Load Environment Variables ===
+load_dotenv()
 groq_api = os.getenv("GROQ_API_KEY")
 news_api = os.getenv("NEWS_API_KEY")
+quiz_api = os.getenv("QUIZ_API_KEY")
 
 # === Fallback for Missing API Keys ===
 if not groq_api or not news_api:
@@ -29,46 +29,43 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1"
 )
 
-# === Initialize recognizer and TTS engine ===
+# === Initialize Recognizer and TTS ===
 recognize = sr.Recognizer()
 engine = pyttsx3.init()
 
 
 def Speak(text):
-    engine.setProperty('rate', 150)
-    engine.say(text)
-    engine.runAndWait()
-    engine.stop()
+    try:
+        engine.setProperty('rate', 150)
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print(f"TTS Error: {e}")
 
 
 def take_command():
     try:
         with sr.Microphone() as source:
-            print("Listening...")
+            print("🎤 Listening...")
+            recognize.adjust_for_ambient_noise(source, duration=0.5)
             try:
-                recognize.adjust_for_ambient_noise(source, duration=0.5)
-                audio = recognize.listen(
-                    source, timeout=5, phrase_time_limit=10)
+                audio = recognize.listen(source, timeout=5, phrase_time_limit=10)
             except sr.WaitTimeoutError:
-                print("Timeout: No voice detected.")
+                print("⏱️ Timeout: No voice detected.")
                 return ""
-            except Exception as mic_error:
-                print("Microphone Error:", mic_error)
-                return ""
-
-        print("Recognizing...")
+        print("🧠 Recognizing...")
         try:
             query = recognize.recognize_google(audio, language="en-in")
-            print(f"You said: {query}")
+            print(f"🗣️ You said: {query}")
             return query.lower()
         except sr.UnknownValueError:
-            print("Sorry, could not understand.")
+            print("❌ Could not understand.")
             return ""
         except sr.RequestError:
-            print("Could not connect to recognition service.")
+            print("⚠️ Recognition service error.")
             return ""
-    except Exception as outer_error:
-        print("Error accessing the microphone:", outer_error)
+    except Exception as e:
+        print("🎙️ Microphone Error:", e)
         return ""
 
 
@@ -79,52 +76,135 @@ def ask_groq(command):
             messages=[
                 {"role": "system", "content": "You are a helpful assistant that replies to human questions briefly."},
                 {"role": "user", "content": command}
-            ]
+            ],
+            max_tokens=500,
+            temperature=0.7
         )
         return response.choices[0].message.content
     except Exception as e:
-        print("Groq API Error:", e)
+        print("❌ Groq API Error:", e)
         return "Sorry, I couldn't get a response from Groq."
 
 
-# === MAIN PROGRAM ===
-if __name__ == "__main__":
-    Speak("Initializing Jarvis...")
-
-    # Wake word
-    wake_timeout = 60  # seconds
+def wait_for_wake_word():
+    print("🔄 Jarvis is ready. Say 'Jarvis' to activate.")
+    Speak("Jarvis is ready. Say Jarvis to activate.")
+    wake_timeout = 60
     start_time = time.time()
-
     while True:
         if time.time() - start_time > wake_timeout:
-            Speak("Timeout reached. No wake word detected.")
-            exit()
-
+            print("😴 Timeout. Going to sleep.")
+            Speak("Timeout. Going to sleep.")
+            return False
         wake = take_command()
         if "jarvis" in wake:
             Speak("Yes sir, I am listening.")
+            return True
+        if wake:
+            start_time = time.time()
+
+
+def get_news(command=""):
+    categories = {
+        "technology": "technology",
+        "tech": "technology",
+        "business": "business",
+        "sports": "sports",
+        "entertainment": "entertainment",
+        "health": "health",
+        "science": "science",
+        "general": "general"
+    }
+    category = "general"
+    for cat in categories:
+        if cat in command:
+            category = categories[cat]
             break
 
-    # Command loop
+    try:
+        print(f"📰 Fetching {category} news...")
+        Speak(f"Fetching the latest {category} news.")
+        url = f"https://newsapi.org/v2/top-headlines?country=in&category={category}&apiKey={news_api}"
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            articles = data.get("articles", [])
+            if not articles:
+                Speak("Sorry, no news found.")
+                return
+            news_count = min(5, len(articles))
+            Speak(f"Here are the top {news_count} news headlines:")
+            for i, article in enumerate(articles[:news_count], 1):
+                title = article.get('title')
+                if title and title != "[Removed]":
+                    print(f"{i}. {title}")
+                    Speak(f"News {i}: {title}")
+                    time.sleep(0.5)
+        else:
+            Speak("Could not fetch news.")
+    except Exception as e:
+        print("News Error:", e)
+        Speak("An error occurred while fetching news.")
+
+
+def search_wikipedia(topic):
+    if not topic:
+        Speak("Please say a topic to search.")
+        return
+    try:
+        print(f"🔍 Wikipedia search: {topic}")
+        Speak(f"Searching Wikipedia for {topic}")
+        summary = wikipedia.summary(topic, sentences=2)
+        Speak("According to Wikipedia:")
+        Speak(summary)
+        Speak("Would you like to know more?")
+        response = take_command()
+        if any(word in response for word in ["yes", "sure", "more", "continue"]):
+            more = wikipedia.summary(topic, sentences=4)
+            Speak(more)
+    except wikipedia.exceptions.PageError:
+        Speak(f"No Wikipedia page found for {topic}")
+    except Exception as e:
+        print("Wikipedia Error:", e)
+        Speak("Wikipedia is not available right now.")
+
+
+def web_opener(command):
+    web_apps = {
+        "youtube": "https://youtube.com",
+        "google": "https://google.com",
+        "gmail": "https://gmail.com",
+        "facebook": "https://facebook.com",
+        "instagram": "https://instagram.com",
+        "twitter": "https://twitter.com",
+        "linkedin": "https://linkedin.com",
+        "github": "https://github.com"
+    }
+    for app, url in web_apps.items():
+        if f"open {app}" in command:
+            Speak(f"Opening {app}")
+            webbrowser.open(url)
+            return
+
+
+# === MAIN PROGRAM ===
+
+if __name__ == "__main__":
+    Speak("Initializing Jarvis...")
+
     while True:
-        try:
-            command = take_command().strip()
+        if not wait_for_wake_word():
+            continue
+
+        while True:
+            command = take_command()
             if not command:
                 continue
 
-            # === PREDEFINED COMMANDS ===
-            if "open youtube" in command:
-                Speak("Opening YouTube")
-                webbrowser.open("https://youtube.com")
-
-            elif "open google" in command:
-                Speak("Opening Google")
-                webbrowser.open("https://google.com")
-
-            elif "open vscode" in command or "open code" in command or "open vs code" in command:
+            # Predefined App Commands
+            if "open vscode" in command or "open code" in command:
                 Speak("Opening Visual Studio Code")
-                code_path = "C:\\Users\\panch\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe"
-                os.startfile(code_path)
+                os.startfile("C:\\Users\\panch\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe")
 
             elif "open notepad" in command:
                 Speak("Opening Notepad")
@@ -132,118 +212,39 @@ if __name__ == "__main__":
 
             elif "open chrome" in command:
                 Speak("Opening Chrome")
-                chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-                os.startfile(chrome_path)
-
-            elif "wikipedia" in command:
-                Speak("Searching Wikipedia...")
-                try:
-                    topic = command.replace("wikipedia", "").strip()
-                    if not topic:
-                        Speak("Please specify a topic to search on Wikipedia.")
-                        continue
-                    result = wikipedia.summary(topic, sentences=2)
-                    Speak("According to Wikipedia")
-                    Speak(result)
-                except Exception as e:
-                    Speak("Sorry, I couldn't find that on Wikipedia.")
-                    print("Wikipedia Error:", e)
+                os.startfile("C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe")
 
             elif "time" in command:
-                current_time = datetime.datetime.now().strftime("%H:%M:%S")
-                Speak(f"The time is {current_time}")
+                now = datetime.datetime.now()
+                time_str = now.strftime("%I:%M %p")
+                date_str = now.strftime("%A, %B %d, %Y")
+                Speak(f"The time is {time_str} and today is {date_str}")
 
             elif "news" in command:
-                Speak("Fetching the latest news from India.")
-                try:
-                    r = requests.get(
-                        f"https://newsapi.org/v2/top-headlines?country=in&apiKey={news_api}")
-                    if r.status_code == 200:
-                        data = r.json()
-                        articles = data.get('articles', [])
-                        if not articles:
-                            Speak("Sorry, I couldn't find any news at the moment.")
-                        else:
-                            for i, article in enumerate(articles[:5], 1):
-                                title = article.get('title')
-                                if title:
-                                    Speak(f"News {i}: {title}")
-                    else:
-                        Speak("Failed to fetch news from the server.")
-                except Exception as e:
-                    Speak("An error occurred while fetching news.")
-                    print("News API Error:", e)
+                get_news(command)
 
-            elif "play quiz" in command or "quiz" in command or "game" in command:
-                Speak("Let's Play Quiz...")
+            elif "wikipedia" in command or "who is" in command or "what is" in command:
+                topic = command.replace("wikipedia", "").replace("who is", "").replace("what is", "").strip()
+                search_wikipedia(topic)
 
-                try:
-                    with open("questions.json", "r") as file:
-                        questions = json.load(file)
-                except Exception as e:
-                    Speak("⚠️ Could not load quiz questions.")
-                    print("Quiz Load Error:", e)
-                    continue
+            elif "open" in command:
+                if not web_opener(command):
+                    Speak("I couldn't find that website in my list.")
 
-                random.shuffle(questions)
-                score = 0
-
-                number_words = {
-                    "one": 1, "two": 2, "three": 3, "four": 4,
-                    "1": 1, "2": 2, "3": 3, "4": 4
-                }
-
-                for i, q in enumerate(questions, start=1):
-                    Speak(f"Q{i}. {q['question']}")
-                    for idx, option in enumerate(q["options"], start=1):
-                        Speak(f"{idx}. {option}")
-
-                    Speak("Please say the option number like 'one', 'option two', or just '3'.")
-
-                    choice = take_command().lower().strip()
-                    num = None
-
-                    if choice in number_words:
-                        num = number_words[choice]
-                    else:
-                        for word in choice.split():
-                            if word in number_words:
-                                num = number_words[word]
-                                break
-
-                    try:
-                        if num and 1 <= num <= 4:
-                            user_answer = q["options"][num - 1]
-                            if user_answer.strip().lower() == q["answer"].strip().lower():
-                                Speak("✅ Correct!")
-                                score += 1
-                            else:
-                                Speak(f"❌ Wrong! Correct answer was: {q['answer']}")
-                        else:
-                            Speak("⚠️ Please choose a number between 1 and 4.")
-                    except:
-                        Speak("⚠️ Couldn't understand your answer. Skipping this question.")
-
-                Speak("🎉 Quiz finished!")
-                Speak(f"🏁 Your total score is: {score} out of {len(questions)}")
-
+            elif "search for" in command:
+                query = command.replace("search for", "").strip()
+                Speak(f"Searching Google for {query}")
+                webbrowser.open(f"https://www.google.com/search?q={query}")
+                
             elif "what can you do" in command or "help" in command:
-                Speak("I can open apps and websites, answer questions, search Wikipedia, read news, play a quiz, and chat using Groq AI.")
+                Speak("I can open apps and websites, answer questions, search Wikipedia, read news, and chat with you.")
 
             elif "exit" in command or "quit" in command or "bye" in command:
                 Speak("Goodbye, sir. See you soon.")
-                break
+                exit()
 
             else:
                 Speak("Let me think...")
-                answer = ask_groq(command)
-                print("Groq:", answer)
-                Speak(answer)
-
-        except KeyboardInterrupt:
-            Speak("Interrupted. Goodbye.")
-            break
-
-        except Exception as main_error:
-            print("Error in main loop:", main_error)
-            Speak("Something went wrong. Please try again.")
+                reply = ask_groq(command)
+                print("Groq:", reply)
+                Speak(reply)
