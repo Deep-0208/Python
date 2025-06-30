@@ -1,0 +1,14 @@
+[
+    {
+        "date": "30/06/2025",
+        "amount": 12.0,
+        "category": "Dining Out",
+        "note": "12"
+    },
+    {
+        "date": "30/06/2025",
+        "amount": 2.0,
+        "category": "Groceries",
+        "note": "2"
+    }
+]

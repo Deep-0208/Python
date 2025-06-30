@@ -1,0 +1,17 @@
+fruits  = []
+
+fruit1 = input("Give a fruit name :")
+fruit2 = input("Give a fruit name :")
+fruit3 = input("Give a fruit name :")
+fruit4 = input("Give a fruit name :")
+fruit5 = input("Give a fruit name :")
+fruit6 = input("Give a fruit name :")
+fruit7 = input("Give a fruit name :")
+fruits.append(fruit1)
+fruits.append(fruit2)
+fruits.append(fruit3)
+fruits.append(fruit4)
+fruits.append(fruit5)
+fruits.append(fruit6)
+fruits.append(fruit7)
+print(fruits)

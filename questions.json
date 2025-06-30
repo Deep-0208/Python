@@ -1,0 +1,17 @@
+[
+  {
+    "question": "What is the capital of India?",
+    "options": ["Mumbai", "Delhi", "Kolkata", "Ahmedabad"],
+    "answer": "Delhi"
+  },
+  {
+    "question": "Which language is used in web browsers?",
+    "options": ["Python", "C++", "JavaScript", "Java"],
+    "answer": "JavaScript"
+  },
+  {
+    "question": "What does CPU stand for?",
+    "options": ["Central Process Unit", "Central Processing Unit", "Computer Personal Unit", "Control Panel Unit"],
+    "answer": "Central Processing Unit"
+  }
+]
