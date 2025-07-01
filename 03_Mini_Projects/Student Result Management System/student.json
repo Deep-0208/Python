@@ -1,0 +1,57 @@
+[
+    {
+        "Name": "Deep Panchal",
+        "Roll Number": 23,
+        "Marks": [
+            78,
+            89,
+            87
+        ],
+        "Percentage": 84.66,
+        "Grade": "A"
+    },
+    {
+        "Name": "Komal Chaudhari",
+        "Roll Number": 10,
+        "Marks": [
+            100,
+            100,
+            100
+        ],
+        "Percentage": 100.0,
+        "Grade": "A+"
+    },
+    {
+        "Name": "d",
+        "Roll Number": 43,
+        "Marks": [
+            43,
+            43,
+            43
+        ],
+        "Percentage": 43.01,
+        "Grade": "E"
+    },
+    {
+        "Name": "k",
+        "Roll Number": 67,
+        "Marks": [
+            67,
+            67,
+            67
+        ],
+        "Percentage": 67.01,
+        "Grade": "C"
+    },
+    {
+        "Name": "lucifer roy",
+        "Roll Number": 9,
+        "Marks": [
+            9,
+            9,
+            9
+        ],
+        "Percentage": 9.0,
+        "Grade": "F (Fail)"
+    }
+]
