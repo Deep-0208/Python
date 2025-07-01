@@ -11,7 +11,7 @@ categories = [
 ]
 
 date = datetime.now().strftime("%d/%m/%Y")
-path = "C:\\Users\\panch\\OneDrive\\Desktop\\Python\\03_Mini_Projects\\Personal Expense Tracker\\expenses.json"
+path = "D:\\Python\\03_Mini_Projects\\Personal Expense Tracker\\expenses.json"
 
 
 def load_data():
