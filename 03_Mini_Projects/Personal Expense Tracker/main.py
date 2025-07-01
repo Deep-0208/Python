@@ -13,7 +13,7 @@ categories = [
 date = datetime.now().strftime("%d/%m/%Y")
 path = "D:\\Python\\03_Mini_Projects\\Personal Expense Tracker\\expenses.json"
 
-
+ 
 def load_data():
     if os.path.exists(path):
         with open(path, 'r') as file:
