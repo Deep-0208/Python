@@ -22,28 +22,6 @@
         "Grade": "A+"
     },
     {
-        "Name": "d",
-        "Roll Number": 43,
-        "Marks": [
-            43,
-            43,
-            43
-        ],
-        "Percentage": 43.01,
-        "Grade": "E"
-    },
-    {
-        "Name": "k",
-        "Roll Number": 67,
-        "Marks": [
-            67,
-            67,
-            67
-        ],
-        "Percentage": 67.01,
-        "Grade": "C"
-    },
-    {
         "Name": "lucifer roy",
         "Roll Number": 9,
         "Marks": [

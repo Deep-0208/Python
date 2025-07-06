@@ -75,8 +75,51 @@ def show_students(data):
     for i, st in enumerate(data, start=1):
         print(f"{i:<3} | {st['Name']:<15} | {st['Roll Number']:<8} | {st['Marks'][0]:<5} | {st['Marks'][1]:<5} | {st['Marks'][2]:<5} | {st['Percentage']:<8.2f} | {st['Grade']}")
 
+def find_student():
+    find_student = input("Enter Student Name OR Roll Number: ").strip().lower()
+    found = False
+    for student in students:
+        name = student['Name'].strip().lower()
+        roll = str(student['Roll Number']).strip()
+        
+        if find_student == name or find_student == roll:
+            print("\n🎯 Student Found:")
+            print(f"Name       : {student['Name']}")
+            print(f"Roll Number: {student['Roll Number']}")
+            print(f"Math Marks : {student['Marks'][0]}")
+            print(f"Physics    : {student['Marks'][1]}")
+            print(f"Chemistry  : {student['Marks'][2]}")
+            print(f"Percentage : {student['Percentage']}%")
+            print(f"Grade      : {student['Grade']}")
+            found = True
+            break
+        
+    if not found:
+        print("❌ Student not found.")
+    
+
+def show_menu():
+    print("\n📘 Student Result System")
+    print("1. Add Student")
+    print("2. Show All Students")
+    print("3. Search Student")
+    print("4. Exit")
 
 if __name__ == "__main__":
-    students = load_data()
-    # add_student(students)
-    show_students(students)
+    while True:
+        show_menu()
+        choice = input("Enter your choice: ")
+
+        students = load_data()
+
+        if choice == '1':
+            add_student(students)
+        elif choice == '2':
+            show_students(students)
+        elif choice == '3':
+            find_student()
+        elif choice == '4':
+            print("👋 Exiting program.")
+            break
+        else:
+            print("❌ Invalid choice.")
